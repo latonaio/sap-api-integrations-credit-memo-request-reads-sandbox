@@ -24,8 +24,8 @@ sap-api-integrations-credit-memo-request-reads が対応する APIサービス �
 ## 本レポジトリ に 含まれる API名
 sap-api-integrations-credit-memo-request-reads には、次の API をコールするためのリソースが含まれています。  
 
-* A_CreditMemoRequest（クレジットメモ依頼 - ヘッダ）※クレジットメモ依頼の詳細データを取得するために、ToHeaderPartner、ToItem、ToItemPricingElement、ToItemScheduleLine、と合わせて利用されます。
-* A_CreditMemoRequestItem（クレジットメモ依頼 - 明細）※クレジットメモ依頼明細の詳細データを取得するために、ToItemPricingElement、ToItemScheduleLine、と合わせて利用されます。
+* A_CreditMemoRequest（クレジットメモ依頼 - ヘッダ）※クレジットメモ依頼の詳細データを取得するために、ToHeaderPartner、ToItem、ToItemPricingElement、と合わせて利用されます。
+* A_CreditMemoRequestItem（クレジットメモ依頼 - 明細）※クレジットメモ依頼明細の詳細データを取得するために、ToItemPricingElement、と合わせて利用されます。
 * ToHeaderPartner（クレジットメモ依頼 - ヘッダ取引先）
 * ToItem（クレジットメモ依頼 - 明細）
 * ToItemPricingElement（クレジットメモ依頼 - 明細価格条件）
