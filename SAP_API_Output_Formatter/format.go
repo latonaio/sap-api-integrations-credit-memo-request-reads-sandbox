@@ -36,7 +36,6 @@ func ConvertToHeader(raw []byte, l *logger.Logger) ([]Header, error) {
 	SalesDistrict:                  data.SalesDistrict,
 	SoldToParty:                    data.SoldToParty,
 	CreationDate:                   data.CreationDate,
-	CreatedByUser:                  data.CreatedByUser,
 	LastChangeDate:                 data.LastChangeDate,
 	LastChangeDateTime:             data.LastChangeDateTime,
 	PurchaseOrderByCustomer:        data.PurchaseOrderByCustomer,

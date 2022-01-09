@@ -19,7 +19,6 @@ type Header struct {
 			SalesDistrict                  string      `json:"SalesDistrict"`
 			SoldToParty                    string      `json:"SoldToParty"`
 			CreationDate                   string      `json:"CreationDate"`
-			CreatedByUser                  string      `json:"CreatedByUser"`
 			LastChangeDate                 string      `json:"LastChangeDate"`
 			LastChangeDateTime             string      `json:"LastChangeDateTime"`
 			PurchaseOrderByCustomer        string      `json:"PurchaseOrderByCustomer"`
