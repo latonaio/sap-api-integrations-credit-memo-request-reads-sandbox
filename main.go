@@ -1,30 +1,79 @@
 package main
 
 import (
-	sap_api_caller "sap-api-integrations-credit-memo-request-reads/SAP_API_Caller"
-	"sap-api-integrations-credit-memo-request-reads/sap_api_input_reader"
+	sap_api_caller "sap-api-integrations-credit-memo-request-reads-rmq-kube/SAP_API_Caller"
+	sap_api_input_reader "sap-api-integrations-credit-memo-request-reads-rmq-kube/SAP_API_Input_Reader"
+	"sap-api-integrations-credit-memo-request-reads-rmq-kube/config"
 
 	"github.com/latonaio/golang-logging-library/logger"
+	rabbitmq "github.com/latonaio/rabbitmq-golang-client"
+	"golang.org/x/xerrors"
 )
 
 func main() {
 	l := logger.NewLogger()
-	fr := sap_api_input_reader.NewFileReader()
-	inoutSDC := fr.ReadSDC("./Inputs/SDC_Credit_Memo_Request_Item_sample.json")
+	conf := config.NewConf()
+	rmq, err := rabbitmq.NewRabbitmqClient(conf.RMQ.URL(), conf.RMQ.QueueFrom(), conf.RMQ.QueueTo())
+	if err != nil {
+		l.Fatal(err.Error())
+	}
+	defer rmq.Close()
+
 	caller := sap_api_caller.NewSAPAPICaller(
-		"https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/", l,
+		conf.SAP.BaseURL(),
+		conf.RMQ.QueueTo(),
+		rmq,
+		l,
 	)
 
-	accepter := inoutSDC.Accepter
-	if len(accepter) == 0 || accepter[0] == "All" {
-		accepter = []string{
-			"Header", "Item",
+	iter, err := rmq.Iterator()
+	if err != nil {
+		l.Fatal(err.Error())
+	}
+	defer rmq.Stop()
+
+	for msg := range iter {
+		err = callProcess(caller, msg)
+		if err != nil {
+			msg.Fail()
+			l.Error(err)
+			continue
 		}
+		msg.Success()
+	}
+}
+
+func callProcess(caller *sap_api_caller.SAPAPICaller, msg rabbitmq.RabbitmqMessage) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			err = xerrors.Errorf("error occurred: %w", e)
+			return
+		}
+	}()
+	creditMemoRequest, creditMemoRequestItem := extractData(msg.Data())
+	accepter := getAccepter(msg.Data())
+	caller.AsyncGetCreditMemoRequest(creditMemoRequest, creditMemoRequestItem, accepter)
+	return nil
+}
+
+func extractData(data map[string]interface{}) (creditMemoRequest, creditMemoRequestItem string) {
+	sdc := sap_api_input_reader.ConvertToSDC(data)
+	creditMemoRequest = sdc.CreditMemoRequest.CreditMemoRequest
+	creditMemoRequestItem = sdc.CreditMemoRequest.CreditMemoRequestItem.CreditMemoRequestItem
+	return
+}
+
+func getAccepter(data map[string]interface{}) []string {
+	sdc := sap_api_input_reader.ConvertToSDC(data)
+	accepter := sdc.Accepter
+	if len(sdc.Accepter) == 0 {
+		accepter = []string{"All"}
 	}
 
-	caller.AsyncGetCreditMemoRequest(
-		inoutSDC.CreditMemoRequest.CreditMemoRequest,
-		inoutSDC.CreditMemoRequest.CreditMemoRequestItem.CreditMemoRequestItem,
-		accepter,
-	)
+	if accepter[0] == "All" {
+		accepter = []string{
+			"Header",
+		}
+	}
+	return accepter
 }
