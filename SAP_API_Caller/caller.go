@@ -4,33 +4,25 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	sap_api_output_formatter "sap-api-integrations-credit-memo-request-reads-rmq-kube/SAP_API_Output_Formatter"
+	sap_api_output_formatter "sap-api-integrations-credit-memo-request-reads/SAP_API_Output_Formatter"
 	"strings"
 	"sync"
 
-	"github.com/latonaio/golang-logging-library/logger"
+	"github.com/latonaio/golang-logging-library-for-sap/logger"
 	"golang.org/x/xerrors"
 )
 
-type RMQOutputter interface {
-	Send(sendQueue string, payload map[string]interface{}) error
-}
-
 type SAPAPICaller struct {
-	baseURL      string
-	apiKey       string
-	outputQueues []string
-	outputter    RMQOutputter
-	log          *logger.Logger
+	baseURL string
+	apiKey  string
+	log     *logger.Logger
 }
 
-func NewSAPAPICaller(baseUrl string, outputQueueTo []string, outputter RMQOutputter, l *logger.Logger) *SAPAPICaller {
+func NewSAPAPICaller(baseUrl string, l *logger.Logger) *SAPAPICaller {
 	return &SAPAPICaller{
-		baseURL:      baseUrl,
-		apiKey:       GetApiKey(),
-		outputQueues: outputQueueTo,
-		outputter:    outputter,
-		log:          l,
+		baseURL: baseUrl,
+		apiKey:  GetApiKey(),
+		log:     l,
 	}
 }
 
@@ -63,19 +55,9 @@ func (c *SAPAPICaller) Header(creditMemoRequest string) {
 		c.log.Error(err)
 		return
 	}
-	err = c.outputter.Send(c.outputQueues[0], map[string]interface{}{"message": headerData, "function": "CreditMemoRequestHeader"})
-	if err != nil {
-		c.log.Error(err)
-		return
-	}
 	c.log.Info(headerData)
 
 	headerPartnerData, err := c.callToHeaderPartner(headerData[0].ToHeaderPartner)
-	if err != nil {
-		c.log.Error(err)
-		return
-	}
-	err = c.outputter.Send(c.outputQueues[0], map[string]interface{}{"message": headerPartnerData, "function": "CreditMemoRequestHeaderPartner"})
 	if err != nil {
 		c.log.Error(err)
 		return
@@ -87,19 +69,9 @@ func (c *SAPAPICaller) Header(creditMemoRequest string) {
 		c.log.Error(err)
 		return
 	}
-	err = c.outputter.Send(c.outputQueues[0], map[string]interface{}{"message": itemData, "function": "CreditMemoRequestItem"})
-	if err != nil {
-		c.log.Error(err)
-		return
-	}
 	c.log.Info(itemData)
-
+	
 	itemPricingElementData, err := c.callToItemPricingElement(itemData[0].ToItemPricingElement)
-	if err != nil {
-		c.log.Error(err)
-		return
-	}
-	err = c.outputter.Send(c.outputQueues[0], map[string]interface{}{"message": itemPricingElementData, "function": "CreditMemoRequestItemPricingElement"})
 	if err != nil {
 		c.log.Error(err)
 		return
@@ -189,19 +161,9 @@ func (c *SAPAPICaller) Item(creditMemoRequest, creditMemoRequestItem string) {
 		c.log.Error(err)
 		return
 	}
-	err = c.outputter.Send(c.outputQueues[0], map[string]interface{}{"message": itemData, "function": "CreditMemoRequestItem"})
-	if err != nil {
-		c.log.Error(err)
-		return
-	}
 	c.log.Info(itemData)
 
 	itemPricingElementData, err := c.callToItemPricingElement(itemData[0].ToItemPricingElement)
-	if err != nil {
-		c.log.Error(err)
-		return
-	}
-	err = c.outputter.Send(c.outputQueues[0], map[string]interface{}{"message": itemData, "function": "CreditMemoRequestItemPricingElement"})
 	if err != nil {
 		c.log.Error(err)
 		return
